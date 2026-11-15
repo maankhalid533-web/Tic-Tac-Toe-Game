@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tic Tac Toe — Khelo!</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#e9efff;background:#0e1532}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 15% 15%,#26386c,transparent 48%),radial-gradient(ellipse at 87% 85%,#3d265d,transparent 50%),#0e1532}.game{width:min(100%,460px);padding:27px;border-radius:27px;background:rgba(20,30,64,.95);box-shadow:0 23px 75px #03071777;border:1px solid #ffffff20}h1{font-size:32px;text-align:center;letter-spacing:-1px;margin:0 0 3px}.intro{text-align:center;margin:0 0 24px;color:#aebbd9;font-size:14px}.mode{display:flex;gap:8px;margin:0 0 20px}.mode button{flex:1;border:1px solid #4a5a83;background:#233159;border-radius:12px;padding:12px 7px;color:#dae6ff;font-size:14px;font-weight:700;cursor:pointer}.mode button.active{background:#6a68ff;color:white;border-color:#9994ff}.scores{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}.score{background:#182447;border-radius:14px;text-align:center;padding:10px 5px;border:1px solid #35446e}.score b{display:block;font-size:25px;margin-top:4px}.score span{font-size:12px;color:#b3c1df}.x{color:#6ee7ff}.o{color:#ffbbda}.status{border-radius:10px;background:#283660;padding:12px;text-align:center;font-weight:700;min-height:46px;margin-bottom:16px}.board{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.cell{aspect-ratio:1/1;background:#223359;color:white;border:1px solid #465982;border-radius:15px;display:grid;place-items:center;font-size:clamp(46px,12vw,70px);font-weight:800;cursor:pointer;transition:background .15s,transform .1s}.cell:hover:enabled{background:#304670;transform:translateY(-2px)}.cell:disabled{cursor:default}.cell.win{background:#326e77;border-color:#80f3b4}.bottom{display:flex;gap:10px;margin-top:20px}.bottom button{flex:1;border:0;border-radius:12px;padding:13px 8px;font-weight:750;font-size:14px;cursor:pointer}.primary{background:#7f7aff;color:white}.secondary{background:#334366;color:#e8efff}.note{text-align:center;color:#aebbd9;font-size:12px;margin:16px 0 0}@media(max-width:400px){.game{padding:18px}.cell{border-radius:12px}}
+</style>
+</head>
+<body>
+<main class="game" aria-label="Tic Tac Toe Game">
+<h1>❌ Tic Tac Toe ⭕</h1><p class="intro">3 ek line mein lao aur jeeto!</p>
+<div class="mode" aria-label="Game mode"><button id="cpu" class="active" type="button">🤖 Computer ke saath</button><button id="friend" type="button">👥 2 Players</button></div>
+<div class="scores"><div class="score"><span id="xlabel">Aap (X)</span><b class="x" id="xscore">0</b></div><div class="score"><span>Draw</span><b id="draws">0</b></div><div class="score"><span id="olabel">Computer (O)</span><b class="o" id="oscore">0</b></div></div>
+<div class="status" id="status" role="status" aria-live="polite">Aap ki baari — X lagayein</div>
+<div class="board" id="board" aria-label="Nine game squares"></div>
+<div class="bottom"><button class="primary" id="again" type="button">🔄 Nayi game</button><button class="secondary" id="clear" type="button">Scores reset</button></div><p class="note">Mobile aur computer dono par khelo • Internet zaroori nahi</p>
+</main>
+<script>
+(()=>{
+const boardNode=document.getElementById('board'),status=document.getElementById('status'),btnCpu=document.getElementById('cpu'),btnFriend=document.getElementById('friend');
+const winLines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+let board,turn,over,mode='cpu',scores={X:0,O:0,draw:0},pending=null,winning=[];
+function outcome(b){for(const line of winLines){const [a,c,d]=line;if(b[a]&&b[a]===b[c]&&b[a]===b[d])return {winner:b[a],line};}return b.every(Boolean)?{winner:'draw',line:[]}:null;}
+function minimax(b,player,depth){const result=outcome(b);if(result){if(result.winner==='O')return {score:10-depth};if(result.winner==='X')return {score:depth-10};return {score:0};}let best={score:player==='O'?-Infinity:Infinity};for(let i=0;i<9;i++){if(!b[i]){b[i]=player;const attempt=minimax(b,player==='O'?'X':'O',depth+1);b[i]='';if((player==='O'&&attempt.score>best.score)||(player==='X'&&attempt.score<best.score))best={score:attempt.score,move:i};}}return best;}
+function text(s){status.textContent=s;}
+function draw(){boardNode.replaceChildren();board.forEach((mark,index)=>{const btn=document.createElement('button');btn.className='cell'+(winning.includes(index)?' win':'')+(mark?' '+mark.toLowerCase():'');btn.type='button';btn.textContent=mark||'';btn.setAttribute('aria-label',`Box ${index+1}: ${mark||'empty'}`);btn.disabled=!!mark||over||(mode==='cpu'&&turn==='O');btn.addEventListener('click',()=>play(index));boardNode.appendChild(btn);});document.getElementById('xscore').textContent=scores.X;document.getElementById('oscore').textContent=scores.O;document.getElementById('draws').textContent=scores.draw;}
+function play(i){if(over||board[i]||(mode==='cpu'&&turn==='O'))return;board[i]=turn;const end=outcome(board);if(end){over=true;winning=end.line;if(end.winner==='draw'){scores.draw++;text('🤝 Match draw ho gaya!');}else{scores[end.winner]++;text(end.winner==='X'?'🎉 X jeet gaya!':'🎉 O jeet gaya!');}draw();return;}turn=turn==='X'?'O':'X';text(mode==='cpu'?(turn==='O'?'🤖 Computer soch raha hai…':'Aap ki baari — X lagayein'):`${turn} ki baari hai`);draw();if(mode==='cpu'&&turn==='O'){pending=setTimeout(()=>{pending=null;if(over||mode!=='cpu')return;const m=minimax(board.slice(),'O',0).move;if(m!==undefined)playComputer(m);},320);}}
+function playComputer(i){if(board[i]||over)return;board[i]='O';const end=outcome(board);if(end){over=true;winning=end.line;if(end.winner==='draw'){scores.draw++;text('🤝 Match draw ho gaya!');}else{scores.O++;text('🤖 Computer jeet gaya! Dobara khelo.');}}else{turn='X';text('Aap ki baari — X lagayein');}draw();}
+function start(){if(pending!==null){clearTimeout(pending);pending=null;}board=Array(9).fill('');turn='X';over=false;winning=[];text(mode==='cpu'?'Aap ki baari — X lagayein':'Player X ki baari hai');draw();}
+function setMode(next){mode=next;btnCpu.classList.toggle('active',mode==='cpu');btnFriend.classList.toggle('active',mode==='friend');document.getElementById('xlabel').textContent=mode==='cpu'?'Aap (X)':'Player 1 (X)';document.getElementById('olabel').textContent=mode==='cpu'?'Computer (O)':'Player 2 (O)';scores={X:0,O:0,draw:0};start();}
+btnCpu.onclick=()=>setMode('cpu');btnFriend.onclick=()=>setMode('friend');document.getElementById('again').onclick=start;document.getElementById('clear').onclick=()=>{scores={X:0,O:0,draw:0};start();};start();
+})();
+</script>
+</body>
+</html>
